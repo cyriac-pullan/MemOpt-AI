@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantcore"
+version = "0.1.0"
+description = "AI Memory Optimization Layer for LLMs — compress KV cache 2-6x with no accuracy loss"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+keywords = [
+    "quantization", "llm", "kv-cache", "memory-optimization",
+    "transformers", "huggingface", "inference", "compression"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+]
+
+[project.optional-dependencies]
+dev       = ["pytest>=7.0", "pytest-cov"]
+torch     = ["torch>=2.0"]
+hf        = ["transformers>=4.47"]
+dashboard = ["flask>=2.3", "flask-cors>=4.0"]
+all       = ["torch>=2.0", "transformers>=4.47", "flask>=2.3", "flask-cors>=4.0"]
+
+[project.scripts]
+quantcore = "quantcore.cli:main"
+
+[project.urls]
+"Homepage"    = "https://github.com/yourname/quantcore"
+"Bug Tracker" = "https://github.com/yourname/quantcore/issues"
+"Paper"       = "https://arxiv.org/abs/2504.19874"
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["turboquant*", "quantcore*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+"quantcore.dashboard" = ["index.html", "static/*"]

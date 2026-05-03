@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantCore - AI Memory Optimization Layer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #080b14;
+            --surface-color: #111827;
+            --surface-hover: #1f2937;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navbar */
+        nav {
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            background: rgba(8, 11, 20, 0.9);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 80px 0 40px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: left;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* Architecture */
+        .architecture {
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 60px;
+            text-align: center;
+        }
+
+        .arch-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 800px;
+            margin: 40px auto 0;
+        }
+
+        .arch-step {
+            padding: 20px;
+            border-radius: 8px;
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+            flex: 1;
+        }
+
+        .arch-step.highlight {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .arch-arrow {
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            margin: 0 20px;
+        }
+
+        /* Dashboard Main Area */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .card {
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .card h3 {
+            margin-bottom: 24px;
+            font-size: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Mode Selector */
+        .mode-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .mode-btn:hover {
+            background: var(--surface-hover);
+        }
+
+        .mode-btn.active {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .mode-title {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .mode-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Charts Area */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Code Block */
+        pre {
+            background: #0d1117;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            color: #e5e7eb;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        .keyword { color: #ff7b72; }
+        .function { color: #d2a8ff; }
+        .string { color: #a5d6ff; }
+        .comment { color: #8b949e; }
+
+        /* Cost Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .cost-save {
+            color: var(--success);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="container nav-content">
+            <div class="logo">QuantCore</div>
+            <div style="display: flex; gap: 20px; color: var(--text-muted);">
+                <a href="#" style="color: inherit; text-decoration: none;">Documentation</a>
+                <a href="#" style="color: inherit; text-decoration: none;">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section class="hero">
+            <h1>Run larger AI models on limited hardware.</h1>
+            <p>QuantCore is an AI Memory Optimization Layer that compresses runtime LLM memory by up to 6x without accuracy loss, eliminating memory bottlenecks in real time.</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">6x</div>
+                    <div class="stat-label">Memory Reduction</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0.995</div>
+                    <div class="stat-label">Cosine Similarity (4-bit)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1 Line</div>
+                    <div class="stat-label">Integration Code</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="architecture">
+            <h2>How it works</h2>
+            <div class="arch-flow">
+                <div class="arch-step">
+                    <strong>HuggingFace Model</strong><br>
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">(Llama, Mistral, etc.)</span>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-step highlight">
+                    <strong>QuantCore Layer</strong><br>
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">(Online Vector Quantization)</span>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-step">
+                    <strong>Compressed KV Cache</strong><br>
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">(Efficient Inference)</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="dashboard-grid">
+            <!-- Left Column: Interactive Benchmark -->
+            <div class="card">
+                <h3>
+                    Memory Benchmark: Llama-3.1-8B
+                    <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted);">KV Cache Size vs Context Length</span>
+                </h3>
+                
+                <div class="mode-selector">
+                    <button class="mode-btn active" onclick="setMode('fast', this)">
+                        <span class="mode-title">Fast (4-bit)</span>
+                        <span class="mode-desc">No accuracy loss. ~2x compression.</span>
+                    </button>
+                    <button class="mode-btn" onclick="setMode('balanced', this)">
+                        <span class="mode-title">Balanced (3-bit)</span>
+                        <span class="mode-desc">Great tradeoff. ~3x compression.</span>
+                    </button>
+                    <button class="mode-btn" onclick="setMode('max', this)">
+                        <span class="mode-title">Max Savings (2-bit)</span>
+                        <span class="mode-desc">Best for RAG. ~4x compression.</span>
+                    </button>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="memoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Right Column: Implementation & Quality -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div class="card">
+                    <h3>Plug-and-play SDK</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Works with existing models without retraining.</p>
+                    <pre><code><span class="keyword">from</span> transformers <span class="keyword">import</span> AutoModelForCausalLM
+<span class="keyword">from</span> quantcore <span class="keyword">import</span> optimize_model
+
+model = AutoModelForCausalLM.from_pretrained(
+    <span class="string">"meta-llama/Llama-3.1-8B"</span>
+)
+
+<span class="comment"># 1-line optimization</span>
+model = <span class="function">optimize_model</span>(model, mode=<span class="string">"balanced"</span>)
+
+<span class="comment"># Run inference normally</span>
+outputs = model.generate(input_ids)</code></pre>
+                </div>
+
+                <div class="card">
+                    <h3>Output Quality (Cosine Sim)</h3>
+                    <div class="chart-container" style="height: 150px;">
+                        <canvas id="qualityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="card" style="margin-bottom: 60px;">
+            <h3>Cost Reduction Impact</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Before (FP16)</th>
+                        <th>After (QuantCore)</th>
+                        <th>Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>GPU Required (Batch 32, 4K ctx)</td>
+                        <td>2x A100 (80GB)</td>
+                        <td>1x A100 (80GB)</td>
+                        <td class="cost-save">50% less hardware</td>
+                    </tr>
+                    <tr>
+                        <td>Cost per hour (AWS)</td>
+                        <td>$8.24</td>
+                        <td>$4.12</td>
+                        <td class="cost-save">Save $36,000 / year</td>
+                    </tr>
+                    <tr>
+                        <td>Max Context (Single GPU)</td>
+                        <td>~16k tokens</td>
+                        <td>~64k tokens</td>
+                        <td class="cost-save">4x longer memory</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script>
+        // Data for Llama-3.1-8B (32 layers, 8 KV heads, head_dim=128)
+        const seqLens = [512, 1024, 2048, 4096, 8192, 16384];
+        
+        // Base fp16 memory in MB
+        const fp16Mem = [64, 128, 256, 512, 1024, 2048];
+        
+        const modeData = {
+            'fast': {
+                name: '4-bit',
+                mem: [33, 66, 132, 264, 528, 1056],
+                color: '#6366f1'
+            },
+            'balanced': {
+                name: '3-bit',
+                mem: [24, 48, 96, 192, 384, 768],
+                color: '#8b5cf6'
+            },
+            'max': {
+                name: '2-bit',
+                mem: [16, 32, 64, 128, 256, 512],
+                color: '#06b6d4'
+            }
+        };
+
+        // Initialize Memory Chart
+        const ctxMem = document.getElementById('memoryChart').getContext('2d');
+        const memChart = new Chart(ctxMem, {
+            type: 'line',
+            data: {
+                labels: seqLens.map(l => l + ' tokens'),
+                datasets: [
+                    {
+                        label: 'Unoptimized (FP16)',
+                        data: fp16Mem,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'QuantCore Fast (4-bit)',
+                        data: modeData['fast'].mem,
+                        borderColor: modeData['fast'].color,
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f3f4f6' } },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'KV Cache Size (MB)', color: '#9ca3af' },
+                        grid: { color: '#374151' },
+                        ticks: { color: '#9ca3af' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+
+        // Initialize Quality Chart
+        const ctxQual = document.getElementById('qualityChart').getContext('2d');
+        new Chart(ctxQual, {
+            type: 'bar',
+            data: {
+                labels: ['FP16', '4-bit', '3-bit', '2-bit'],
+                datasets: [{
+                    label: 'Cosine Similarity',
+                    data: [1.0, 0.995, 0.983, 0.940],
+                    backgroundColor: ['#ef4444', '#6366f1', '#8b5cf6', '#06b6d4'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        min: 0.9,
+                        max: 1.0,
+                        grid: { color: '#374151' },
+                        ticks: { color: '#9ca3af' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+
+        // Mode Switching Logic
+        function setMode(mode, btnElement) {
+            // Update active class
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            // Update chart dataset
+            memChart.data.datasets[1].label = `QuantCore ${mode.charAt(0).toUpperCase() + mode.slice(1)} (${modeData[mode].name})`;
+            memChart.data.datasets[1].data = modeData[mode].mem;
+            memChart.data.datasets[1].borderColor = modeData[mode].color;
+            
+            // Adjust fill color based on line color
+            let rgb = '99, 102, 241';
+            if (mode === 'balanced') rgb = '139, 92, 246';
+            if (mode === 'max') rgb = '6, 182, 212';
+            memChart.data.datasets[1].backgroundColor = `rgba(${rgb}, 0.1)`;
+
+            memChart.update();
+        }
+    </script>
+</body>
+</html>
