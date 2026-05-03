@@ -147,7 +147,7 @@ def benchmark_numpy(
     num_heads: int = 32,
     num_layers: int = 32,
     seq_lens: tuple = (128, 256, 512, 1024, 2048, 4096),
-    bits: int = 4,
+    bits: int = None,
     mode: str = "balanced",
     n_vectors: int = 64,
 ) -> ProfileResult:
@@ -168,10 +168,10 @@ def benchmark_numpy(
         Number of transformer layers.
     seq_lens : tuple
         Sequence lengths to benchmark.
-    bits : int
-        Quantization bits.
+    bits : int, optional
+        Quantization bits. If None, resolved from mode.
     mode : str
-        QuantCore mode string.
+        QuantCore mode string. Overrides bits if bits is None.
     n_vectors : int
         Number of vectors to compress for quality measurement.
 
@@ -179,6 +179,11 @@ def benchmark_numpy(
     -------
     ProfileResult
     """
+    # Resolve mode -> bits (THIS IS THE FIX)
+    _mode_bits = {"fast": 4, "balanced": 3, "max_memory_save": 2}
+    if bits is None:
+        bits = _mode_bits.get(mode, 4)
+
     import numpy as np
     import sys, os
     _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
