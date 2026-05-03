@@ -207,15 +207,57 @@ def build_parser() -> argparse.ArgumentParser:
     p_bench.add_argument("--output", "-o", type=str, default=None,
                          help="Save results to JSON file (prefix, one per mode)")
 
+
     # dashboard
     p_dash = sub.add_parser("dashboard", help="Start the monitoring web dashboard")
     p_dash.add_argument("--port", type=int, default=8080, help="Port (default: 8080)")
     p_dash.add_argument("--host", type=str, default="127.0.0.1", help="Host (default: 127.0.0.1)")
 
+    # serve (vLLM)
+    p_serve = sub.add_parser("serve", help="Launch vLLM API server with QuantCore KV compression")
+    p_serve.add_argument("--model", "-m", required=True, metavar="HF_MODEL_ID",
+                         help="HuggingFace model ID")
+    p_serve.add_argument("--mode", type=str, default="adaptive",
+                         choices=["fast", "balanced", "max_memory_save", "adaptive"],
+                         help="Compression mode (default: adaptive)")
+    p_serve.add_argument("--max-memory", type=str, default=None,
+                         help="Memory budget (e.g. '12GB', '8192', '0.8')")
+    p_serve.add_argument("--max-cache-len", type=int, default=None,
+                         help="Sliding window eviction length")
+    p_serve.add_argument("--port", type=int, default=8000, help="API server port (default: 8000)")
+    p_serve.add_argument("--host", type=str, default="0.0.0.0", help="API server host (default: 0.0.0.0)")
+
     # version
     sub.add_parser("version", help="Show version info")
 
     return parser
+
+
+# ── serve command ─────────────────────────────────────────────────────────────
+
+def cmd_serve(args):
+    """Launch a vLLM API server with QuantCore KV cache compression."""
+    try:
+        from quantcore.vllm_integration import quantcore_vllm_serve
+    except ImportError:
+        print(_red(
+            "\n  ✗ vLLM not installed. Run:\n"
+            "    pip install vllm\n"
+        ))
+        sys.exit(1)
+
+    max_memory = args.max_memory
+    if max_memory and max_memory.isdigit():
+        max_memory = int(max_memory)
+
+    quantcore_vllm_serve(
+        model=args.model,
+        mode=args.mode,
+        max_memory=max_memory,
+        max_cache_len=args.max_cache_len,
+        host=args.host,
+        port=args.port,
+    )
 
 
 def main():
@@ -230,6 +272,7 @@ def main():
         "info":      cmd_info,
         "benchmark": cmd_benchmark,
         "dashboard": cmd_dashboard,
+        "serve":     cmd_serve,
         "version":   cmd_version,
     }
 
@@ -245,3 +288,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

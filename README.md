@@ -1,8 +1,12 @@
 # QuantCore
 
-**Runtime KV Cache Compression for LLMs.**
+**Adaptive Memory Runtime for LLMs.**
 
-QuantCore compresses the Key-Value cache of transformer models during inference using the [TurboQuant](https://arxiv.org/abs/2504.19874) algorithm (ICLR 2026). It reduces KV cache memory by 2-4x, enabling longer context windows and lower GPU costs — with a single line of code.
+[![PyPI](https://img.shields.io/pypi/v/quantcore-ai)](https://pypi.org/project/quantcore-ai/)
+[![Python](https://img.shields.io/pypi/pyversions/quantcore-ai)](https://pypi.org/project/quantcore-ai/)
+[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
+
+QuantCore compresses the Key-Value cache of transformer models during inference using the [TurboQuant](https://arxiv.org/abs/2504.19874) algorithm (ICLR 2026). It reduces KV cache memory by 2–6x with **dynamic bit switching, memory budgets, and sliding window eviction** — enabling longer context windows, cheaper GPU costs, and OOM-free inference.
 
 ---
 
@@ -13,8 +17,8 @@ KV cache memory grows linearly with sequence length. At short contexts (< 1K tok
 | Scenario | KV Cache Size | QuantCore Impact |
 |---|---|---|
 | Short chat (< 512 tokens) | Small | Minimal |
-| Long context (2K-8K tokens) | Large | **Significant savings** |
-| Very long context (8K-32K tokens) | Dominant | **Critical — prevents OOM** |
+| Long context (2K–8K tokens) | Large | **Significant savings** |
+| Very long context (8K–32K tokens) | Dominant | **Critical — prevents OOM** |
 | Multi-user serving (batched) | Multiplied | **Major cost reduction** |
 
 ### Real Numbers (Llama-3.1-8B, balanced mode)
@@ -31,6 +35,10 @@ KV cache memory grows linearly with sequence length. At short contexts (< 1K tok
 ---
 
 ## Quick Start
+
+```bash
+pip install quantcore-ai
+```
 
 ```python
 from transformers import AutoModelForCausalLM
@@ -51,13 +59,45 @@ print(f"Memory saved: {stats['memory_saved_mb']:.0f} MB")
 
 ---
 
+## Adaptive Runtime (v2)
+
+QuantCore v2 dynamically adjusts compression during inference based on real-time GPU memory pressure.
+
+```python
+# Adaptive mode: auto bit-switching + memory budgets + eviction
+model = optimize_model(
+    model,
+    mode="adaptive",
+    max_memory="8GB",       # memory budget
+    max_cache_len=8192,     # sliding window eviction
+)
+
+# The runtime automatically:
+#  - Starts at 4-bit (best quality)
+#  - Escalates to 3-bit → 2-bit as context grows
+#  - Evicts oldest tokens when cache exceeds max_cache_len
+#  - Never exceeds your memory budget
+```
+
+### How Adaptive Mode Works
+
+```
+Context Length:   0 ──── 1K ──── 2K ──── 4K ──── 8K ──── 16K+
+Bit Depth:       4-bit       3-bit       2-bit       eviction
+Quality:         ████████  ██████░░  ████░░░░   ████░░░░
+Memory:          ██░░░░░░  ████░░░░  ██████░░   ██████░░
+```
+
+---
+
 ## Compression Modes
 
 | Mode | Bits | Cosine Similarity | Compression | Best For |
 |---|---|---|---|---|
 | `fast` | 4-bit | 0.995 | ~2x | Production chatbots, high accuracy |
 | `balanced` | 3-bit | 0.983 | ~3x | General purpose (recommended) |
-| `max_memory_save` | 2-bit | 0.940 | ~4-6x | RAG pipelines, edge deployment |
+| `max_memory_save` | 2-bit | 0.940 | ~4–6x | RAG pipelines, edge deployment |
+| `adaptive` | dynamic | varies | ~2–6x | Production serving, unknown workloads |
 
 ### Auto Mode (Policy Engine)
 
@@ -70,7 +110,7 @@ model = optimize_model(model, max_memory=0)  # Auto-detect GPU memory
 | GPU Memory | Auto-selected Mode |
 |---|---|
 | < 8 GB | `max_memory_save` (2-bit) |
-| 8-16 GB | `balanced` (3-bit) |
+| 8–16 GB | `balanced` (3-bit) |
 | 16+ GB | `fast` (4-bit) |
 
 ---
@@ -78,12 +118,34 @@ model = optimize_model(model, max_memory=0)  # Auto-detect GPU memory
 ## Installation
 
 ```bash
-pip install quantcore
+pip install quantcore-ai
 ```
 
-With dashboard and all extras:
+With all extras (torch, HF, dashboard):
 ```bash
-pip install quantcore[all]
+pip install quantcore-ai[all]
+```
+
+---
+
+## Supported Models
+
+QuantCore automatically detects model architecture and extracts KV cache parameters:
+
+- **Llama** (1B, 3B, 8B, 70B) — including Llama 3.x
+- **Mistral** / Mixtral
+- **Phi-3** / Phi-4
+- **Gemma** / Gemma 2
+- **Qwen** / Qwen 2.5
+- **Falcon** / StableLM / GPT-NeoX
+
+Any HuggingFace `PreTrainedModel` with a standard config is supported. GQA and MHA architectures are handled automatically.
+
+```bash
+# Check any model's compatibility
+quantcore info --model meta-llama/Llama-3.1-8B
+quantcore info --model Qwen/Qwen2.5-7B
+quantcore info --model google/gemma-2-9b
 ```
 
 ---
@@ -95,11 +157,69 @@ pip install quantcore[all]
 quantcore info --model meta-llama/Llama-3.1-8B
 
 # Run synthetic benchmark (no GPU needed)
-quantcore benchmark
+quantcore benchmark --mode all
 
 # Start live monitoring dashboard
 quantcore dashboard --port 8080
+
+# Launch vLLM API server with compressed KV cache
+quantcore serve --model meta-llama/Llama-3.1-8B --mode adaptive --max-memory 12GB
+
+# Show version
+quantcore version
 ```
+
+---
+
+## vLLM Integration (Production Serving)
+
+```python
+from quantcore.vllm_integration import QuantCoreLLM
+
+# Drop-in replacement for vllm.LLM with compressed KV cache
+llm = QuantCoreLLM(
+    "meta-llama/Llama-3.1-8B",
+    mode="adaptive",
+    max_memory="12GB",
+    max_cache_len=8192,
+)
+
+outputs = llm.generate(["Explain KV cache compression in detail"])
+print(outputs[0].outputs[0].text)
+```
+
+Or launch as an OpenAI-compatible API server:
+
+```bash
+quantcore serve --model meta-llama/Llama-3.1-8B --mode adaptive --max-memory 12GB
+```
+
+---
+
+## Triton Fused Kernel (GPU Acceleration)
+
+QuantCore includes a Triton fused attention kernel that computes Q·K^T directly from compressed uint8 indices — **never materializing fp16 keys in GPU memory**.
+
+```
+Standard:  Load fp16 keys → 2 bytes/elem → matmul
+QuantCore: Load uint8 idx → 1 byte/elem → fused lookup+dot  (2x less HBM traffic)
+```
+
+The kernel auto-selects when a CUDA GPU with Triton is available. CPU inference falls back to PyTorch automatically.
+
+---
+
+## Monitoring Dashboard
+
+```bash
+quantcore dashboard --port 8080
+```
+
+Real-time browser dashboard showing:
+- Memory savings (FP16 vs compressed)
+- Compression ratio by mode
+- KV cache growth over sequence length
+- Interactive mode comparison
 
 ---
 
@@ -108,13 +228,15 @@ quantcore dashboard --port 8080
 ```
 User Request
      |
-LLM (HuggingFace)
+LLM (HuggingFace / vLLM)
      |
 QuantCore Layer (optimize_model)
      |
      +-- Random orthogonal rotation
-     +-- Lloyd-Max scalar quantization (Beta-optimal)
-     +-- Compressed KV Cache (2-4 bit per dimension)
+     +-- Lloyd-Max scalar quantization (Beta-optimal codebook)
+     +-- AdaptivePolicy (dynamic bit switching based on memory pressure)
+     +-- Sliding window eviction (bounded memory)
+     +-- Compressed KV Cache (2–4 bit per dimension)
      |
 Efficient Inference (same output quality)
 ```
@@ -123,37 +245,25 @@ The algorithm applies a random orthogonal rotation to KV vectors, which induces 
 
 ---
 
-## Supported Models
-
-QuantCore automatically detects model architecture and extracts KV cache parameters:
-
-- Llama (1B, 3B, 8B, 70B)
-- Mistral / Mixtral
-- Phi-3 / Phi-4
-- Gemma / Gemma 2
-- Qwen / Qwen 2.5
-
-Any HuggingFace `PreTrainedModel` with a standard config is supported.
-
----
-
 ## Limitations (Honest)
 
 - **Short context (< 1K tokens)**: KV cache is small, savings are negligible. Model weights dominate memory.
 - **Output divergence**: Compressed KV slightly shifts attention weights. At 4-bit this is nearly invisible; at 2-bit, generation may diverge from baseline after many tokens. Semantic meaning is preserved.
-- **CPU-only**: Current implementation uses NumPy for compression. A fused Triton kernel (planned) would add GPU-accelerated compression with zero overhead.
+- **Triton requirement**: The fused GPU kernel requires a CUDA GPU + Triton. CPU inference uses PyTorch fallback (functional but slower).
 
 ---
 
-## Roadmap
+## Feature Status
 
 - [x] HuggingFace plug-and-play integration
 - [x] Multi-architecture support (Llama, Mistral, Phi, Gemma, Qwen)
 - [x] Policy Engine (auto mode selection)
 - [x] CLI tools and monitoring dashboard
-- [ ] Triton fused attention kernel (GPU-accelerated compression)
-- [ ] vLLM integration (production serving)
-- [ ] PyPI release
+- [x] Triton fused attention kernel (GPU-accelerated compression)
+- [x] vLLM integration (production serving)
+- [x] Adaptive runtime (dynamic bit switching + memory budgets)
+- [x] Sliding window eviction (bounded memory)
+- [x] PyPI release (`pip install quantcore-ai`)
 
 ---
 

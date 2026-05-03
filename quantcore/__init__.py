@@ -1,11 +1,12 @@
 """
 QuantCore
 =========
-AI Memory Optimization Layer for LLMs.
+Adaptive Memory Runtime for LLMs.
 
 Compresses transformer KV caches by 2–6x using near-optimal vector
 quantization (TurboQuant, ICLR 2026) — with no retraining, no calibration
-data, and no accuracy loss at 4-bit.
+data, and no accuracy loss at 4-bit. Features dynamic bit switching,
+memory budgets, and sliding window eviction.
 
 Quick start
 -----------
@@ -14,6 +15,9 @@ Quick start
     model = optimize_model(model)                          # balanced 3-bit
     model = optimize_model(model, mode="fast")            # 4-bit, best quality
     model = optimize_model(model, mode="max_memory_save") # 2-bit, max savings
+    model = optimize_model(model, mode="adaptive",        # dynamic runtime
+                           max_memory="8GB",
+                           max_cache_len=8192)
 
     outputs = model.generate(input_ids, max_new_tokens=512)
 
@@ -39,6 +43,8 @@ CLI
 from .sdk import optimize_model, mode_info
 from .profiler import benchmark_numpy as benchmark, profile_memory
 from .compat import extract_model_info, check_compatibility, ModelInfo
+from .adaptive import AdaptivePolicy
+from .policy import MemoryBudget, parse_memory
 from .exceptions import (
     QuantCoreError,
     QuantCoreCompatError,
@@ -46,7 +52,7 @@ from .exceptions import (
     QuantCoreDependencyError,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__  = "QuantCore Contributors"
 __paper__   = "https://arxiv.org/abs/2504.19874"
 
@@ -56,6 +62,10 @@ __all__ = [
     "mode_info",
     "benchmark",
     "profile_memory",
+    # Adaptive Runtime (v2)
+    "AdaptivePolicy",
+    "MemoryBudget",
+    "parse_memory",
     # Compatibility
     "extract_model_info",
     "check_compatibility",

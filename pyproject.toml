@@ -3,14 +3,15 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "quantcore"
-version = "0.1.0"
-description = "AI Memory Optimization Layer for LLMs — compress KV cache 2-6x with no accuracy loss"
+name = "quantcore-ai"
+version = "0.2.0"
+description = "Adaptive Memory Runtime for LLMs — compress KV cache 2-6x with dynamic bit switching, memory budgets, and sliding window eviction"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 keywords = [
     "quantization", "llm", "kv-cache", "memory-optimization",
-    "transformers", "huggingface", "inference", "compression"
+    "transformers", "huggingface", "inference", "compression",
+    "adaptive", "runtime"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -35,15 +36,15 @@ dev       = ["pytest>=7.0", "pytest-cov"]
 torch     = ["torch>=2.0"]
 hf        = ["transformers>=4.47"]
 dashboard = ["flask>=2.3", "flask-cors>=4.0"]
+vllm      = ["vllm>=0.4.0"]
 all       = ["torch>=2.0", "transformers>=4.47", "flask>=2.3", "flask-cors>=4.0"]
 
 [project.scripts]
 quantcore = "quantcore.cli:main"
 
 [project.urls]
-"Homepage"    = "https://github.com/yourname/quantcore"
-"Bug Tracker" = "https://github.com/yourname/quantcore/issues"
-"Paper"       = "https://arxiv.org/abs/2504.19874"
+"Homepage"    = "https://github.com/cyriac-pullan/MemOpt-AI"
+"Bug Tracker" = "https://github.com/cyriac-pullan/MemOpt-AI/issues"
 
 [tool.setuptools.packages.find]
 where   = ["."]
