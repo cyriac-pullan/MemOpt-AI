@@ -29,6 +29,7 @@ _MODE_BITS: dict[str, int] = {
     "fast":            4,   # cosine sim 0.995,  ~1.9x vs fp16
     "balanced":        3,   # cosine sim 0.983,  ~2.8x vs fp16
     "max_memory_save": 2,   # cosine sim 0.940,  ~4.0x vs fp16
+    "adaptive":        None, # dynamic — changes at runtime
 }
 
 _MODE_DESCRIPTION: dict[str, dict] = {
@@ -44,10 +45,15 @@ _MODE_DESCRIPTION: dict[str, dict] = {
         "bits": 2, "cosine_sim": 0.940, "compression_vs_fp16": 3.88,
         "description": "Maximum compression. Good for RAG and edge deployment.",
     },
+    "adaptive": {
+        "bits": "dynamic", "cosine_sim": "varies", "compression_vs_fp16": "varies",
+        "description": "Adaptive runtime. Escalates compression as context grows.",
+    },
 }
 
 
-def _validate_mode(mode: str) -> int:
+def _validate_mode(mode: str) -> Optional[int]:
+    """Returns bits for mode. Returns None for adaptive (resolved at runtime)."""
     if mode not in _MODE_BITS:
         raise QuantCoreModeError(mode)
     return _MODE_BITS[mode]
@@ -66,6 +72,8 @@ def _optimize_hf_model(
     mode: str,
     compress_values: bool,
     verbose: bool,
+    adaptive_policy=None,
+    max_cache_len: int = None,
 ):
     """Patch a HuggingFace model to use TurboQuant KV cache."""
     try:
@@ -78,7 +86,6 @@ def _optimize_hf_model(
     # Import our HF integration (already exists in the turboquant package)
     try:
         import sys, os
-        # Ensure turboquant is importable (it's the parent package)
         _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         if _root not in sys.path:
             sys.path.insert(0, _root)
@@ -93,14 +100,16 @@ def _optimize_hf_model(
         bits=bits,
         compress_values=compress_values,
         verbose=verbose,
+        adaptive_policy=adaptive_policy,
+        max_cache_len=max_cache_len,
     )
 
     # Inject stats helper onto the model
-    _inject_stats(model, mode, bits)
+    _inject_stats(model, mode, bits if bits else 3, adaptive_policy)
     return model
 
 
-def _inject_stats(model, mode: str, bits: int):
+def _inject_stats(model, mode: str, bits: int, adaptive_policy=None):
     """Inject model.quantcore_stats() and model.quantcore_info attributes."""
     from .compat import extract_model_info
 
@@ -112,10 +121,14 @@ def _inject_stats(model, mode: str, bits: int):
 
     model.quantcore_info = {
         "mode": mode,
-        "bits": bits,
+        "bits": bits if mode != "adaptive" else "dynamic",
         "model_info": info,
         **_MODE_DESCRIPTION[mode],
     }
+
+    # Expose adaptive policy for monitoring
+    if adaptive_policy:
+        model.quantcore_policy = adaptive_policy
 
     def quantcore_stats(seq_len: int = 4096) -> dict:
         """
@@ -192,7 +205,8 @@ def _optimize_torch_model(model, bits: int, mode: str, verbose: bool):
 def optimize_model(
     model,
     mode: str = "balanced",
-    max_memory: float = None,
+    max_memory=None,
+    max_cache_len: int = None,
     compress_values: bool = False,
     verbose: bool = True,
 ):
@@ -208,15 +222,19 @@ def optimize_model(
         Any HuggingFace model or raw PyTorch model.
     mode : str
         Compression mode:
-          "fast"            → 4-bit (cosine sim 0.995, ~1.9x vs fp16)
-          "balanced"        → 3-bit (cosine sim 0.983, ~2.8x vs fp16) [default]
-          "max_memory_save" → 2-bit (cosine sim 0.940, ~4.0x vs fp16)
-    max_memory : float, optional
-        If provided (in MB), automatically selects the best mode.
+          "fast"            -> 4-bit (cosine sim 0.995, ~1.9x vs fp16)
+          "balanced"        -> 3-bit (cosine sim 0.983, ~2.8x vs fp16) [default]
+          "max_memory_save" -> 2-bit (cosine sim 0.940, ~4.0x vs fp16)
+          "adaptive"        -> dynamic compression (escalates as context grows)
+    max_memory : str, int, float, optional
+        Memory budget. Activates adaptive policy when combined with mode="adaptive".
+        Supports: "6GB", "512MB", 6144 (MB), 0.8 (fraction of GPU).
         If set to 0, automatically detects available GPU memory.
+    max_cache_len : int, optional
+        Maximum KV cache length before eviction (sliding window).
+        If None, cache grows without bound.
     compress_values : bool
         Also compress value vectors (not just keys). Default False.
-        Doubles the compression but may affect output slightly more.
     verbose : bool
         Print compression info on first call. Default True.
 
@@ -226,22 +244,47 @@ def optimize_model(
 
     Examples
     --------
-    >>> from quantcore import optimize_model
-    >>> model = optimize_model(model)
-    >>> model = optimize_model(model, mode="fast")
-    >>> model = optimize_model(model, max_memory=8192) # Auto-selects based on 8GB limit
-    >>> outputs = model.generate(input_ids, max_new_tokens=512)
-
-    After optimization:
-    >>> stats = model.quantcore_stats(seq_len=4096)
-    >>> print(f"Memory saved: {stats['memory_saved_mb']:.0f} MB")
+    >>> model = optimize_model(model)                        # balanced 3-bit
+    >>> model = optimize_model(model, mode="adaptive")       # dynamic compression
+    >>> model = optimize_model(model, max_memory="6GB")      # budget mode
+    >>> model = optimize_model(model, mode="adaptive",
+    ...                        max_memory="8GB",
+    ...                        max_cache_len=8192)           # full adaptive
     """
+    adaptive_policy = None
+
+    # Parse max_memory if provided
+    budget_mb = None
     if max_memory is not None:
+        if max_memory == 0:
+            # Auto-detect
+            from .policy import detect_gpu_memory_mb
+            budget_mb = detect_gpu_memory_mb()
+        else:
+            from .policy import parse_memory
+            budget_mb = parse_memory(max_memory)
+
+    # Handle adaptive mode
+    if mode == "adaptive":
+        from .adaptive import AdaptivePolicy
+        adaptive_policy = AdaptivePolicy(
+            memory_budget_mb=budget_mb,
+            stability_steps=32,
+        )
+        bits = 4  # start with light compression, policy adjusts at runtime
+        if verbose:
+            budget_str = f", budget={budget_mb:.0f}MB" if budget_mb else ""
+            print(f"[QuantCore] Adaptive mode enabled{budget_str}")
+            print(f"  Compression will escalate: 4-bit -> 3-bit -> 2-bit as needed")
+            if max_cache_len:
+                print(f"  Sliding window eviction at {max_cache_len} tokens")
+    elif budget_mb and mode != "adaptive":
+        # max_memory without adaptive: just auto-select static mode
         from .policy import auto_select_mode
-        mode = auto_select_mode(max_memory)
+        mode = auto_select_mode(budget_mb)
         bits = _validate_mode(mode)
         if verbose:
-            print(f"[QuantCore] Policy Engine auto-selected mode: {mode} ({bits}-bit)")
+            print(f"[QuantCore] Policy Engine auto-selected: {mode} ({bits}-bit)")
     else:
         bits = _validate_mode(mode)
 
@@ -249,6 +292,8 @@ def optimize_model(
         return _optimize_hf_model(
             model, bits=bits, mode=mode,
             compress_values=compress_values, verbose=verbose,
+            adaptive_policy=adaptive_policy,
+            max_cache_len=max_cache_len,
         )
     else:
         return _optimize_torch_model(model, bits=bits, mode=mode, verbose=verbose)

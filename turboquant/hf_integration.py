@@ -62,6 +62,10 @@ class TurboQuantLayer(DynamicLayer if _HF_AVAILABLE else object):
     layer_idx : int  (used to seed the rotation matrix)
     compress_values : bool  (also compress values, default False)
     verbose : bool
+    adaptive_policy : AdaptivePolicy, optional
+        If set, bits may change at runtime based on seq_len and memory.
+    max_cache_len : int, optional
+        If set, applies sliding window eviction beyond this length.
     """
 
     def __init__(
@@ -71,12 +75,16 @@ class TurboQuantLayer(DynamicLayer if _HF_AVAILABLE else object):
         layer_idx: int = 0,
         compress_values: bool = False,
         verbose: bool = False,
+        adaptive_policy=None,
+        max_cache_len: int = None,
     ):
         super().__init__()
         self.head_dim = head_dim
         self.bits = bits
         self.compress_values = compress_values
         self._layer_idx = layer_idx
+        self._adaptive_policy = adaptive_policy
+        self._max_cache_len = max_cache_len
 
         self._tq_keys = TurboQuantTorch(
             dim=head_dim, bits=bits, seed=layer_idx * 137, verbose=verbose
@@ -84,6 +92,11 @@ class TurboQuantLayer(DynamicLayer if _HF_AVAILABLE else object):
         self._tq_vals = TurboQuantTorch(
             dim=head_dim, bits=bits, seed=layer_idx * 137 + 1000, verbose=False
         ) if compress_values else None
+
+        # Quantizer cache: pre-built quantizers for each bit depth (adaptive)
+        self._tq_cache = {bits: self._tq_keys}
+        if compress_values:
+            self._tq_val_cache = {bits: self._tq_vals}
 
         # Compressed key storage tensors
         self._k_indices: Optional[torch.Tensor] = None   # (B, H, S, D) uint8
@@ -112,6 +125,7 @@ class TurboQuantLayer(DynamicLayer if _HF_AVAILABLE else object):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compress incoming keys, append to store, return full decompressed KV.
+        Checks adaptive policy and applies sliding window eviction if configured.
         """
         if not self.is_initialized:
             self.lazy_initialization(key_states, value_states)
@@ -119,9 +133,38 @@ class TurboQuantLayer(DynamicLayer if _HF_AVAILABLE else object):
         B, H, T, D = key_states.shape
         self.cumulative_length += T
 
-        # ── Keys: compress & append ──────────────────────────────────────────
+        # -- Adaptive policy check (only layer 0 makes the decision) --
+        if self._adaptive_policy and self._layer_idx == 0:
+            try:
+                gpu_used = torch.cuda.memory_allocated() / (1024 * 1024)
+                gpu_total = torch.cuda.get_device_properties(0).total_memory / (1024 * 1024)
+            except Exception:
+                gpu_used, gpu_total = 0, 0
+
+            new_bits = self._adaptive_policy.select_bits(
+                seq_len=self.cumulative_length,
+                gpu_mem_used_mb=gpu_used,
+                gpu_mem_total_mb=gpu_total,
+            )
+            if new_bits != self.bits and new_bits in (2, 3, 4):
+                self._switch_bits(new_bits)
+
+        # -- Sliding window eviction --
+        if self._max_cache_len and self._k_indices is not None:
+            current_len = self._k_indices.shape[2]
+            if current_len >= self._max_cache_len:
+                keep = self._max_cache_len - T
+                self._k_indices = self._k_indices[:, :, -keep:, :]
+                self._k_norms = self._k_norms[:, :, -keep:]
+                if self.compress_values and self._v_indices is not None:
+                    self._v_indices = self._v_indices[:, :, -keep:, :]
+                    self._v_norms = self._v_norms[:, :, -keep:]
+                elif not self.compress_values:
+                    self.values = self.values[:, :, -keep:, :]
+
+        # -- Keys: compress & append --
         k_flat   = key_states.reshape(-1, D).float()
-        idx, nms = self._tq_keys.compress(k_flat)            # (B*H*T, D), (B*H*T,)
+        idx, nms = self._tq_keys.compress(k_flat)
         idx = idx.reshape(B, H, T, D)
         nms = nms.reshape(B, H, T)
 
@@ -130,7 +173,7 @@ class TurboQuantLayer(DynamicLayer if _HF_AVAILABLE else object):
         self._k_norms   = nms if self._k_norms is None else \
             torch.cat([self._k_norms, nms], dim=2)
 
-        # ── Values: compress or accumulate fp16 ─────────────────────────────
+        # -- Values: compress or accumulate fp16 --
         if self.compress_values:
             v_flat   = value_states.reshape(-1, D).float()
             vidx, vnms = self._tq_vals.compress(v_flat)
@@ -144,14 +187,14 @@ class TurboQuantLayer(DynamicLayer if _HF_AVAILABLE else object):
             self.values = value_states if self.values.numel() == 0 else \
                 torch.cat([self.values, value_states], dim=-2)
 
-        # ── Reconstruct full keys ────────────────────────────────────────────
+        # -- Reconstruct full keys --
         S  = self._k_indices.shape[2]
         fk = self._tq_keys.decompress(
             self._k_indices.reshape(-1, D),
             self._k_norms.reshape(-1),
         ).reshape(B, H, S, D).to(key_states.dtype)
 
-        # ── Reconstruct full values ──────────────────────────────────────────
+        # -- Reconstruct full values --
         if self.compress_values:
             Sv = self._v_indices.shape[2]
             fv = self._tq_vals.decompress(
@@ -162,6 +205,28 @@ class TurboQuantLayer(DynamicLayer if _HF_AVAILABLE else object):
             fv = self.values
 
         return fk, fv
+
+    def _switch_bits(self, new_bits: int):
+        """Switch quantizer to a new bit depth (for adaptive policy)."""
+        if new_bits not in self._tq_cache:
+            self._tq_cache[new_bits] = TurboQuantTorch(
+                dim=self.head_dim, bits=new_bits,
+                seed=self._layer_idx * 137, verbose=False,
+            )
+            self._tq_cache[new_bits].to(self.device)
+            if self.compress_values:
+                if not hasattr(self, '_tq_val_cache'):
+                    self._tq_val_cache = {}
+                self._tq_val_cache[new_bits] = TurboQuantTorch(
+                    dim=self.head_dim, bits=new_bits,
+                    seed=self._layer_idx * 137 + 1000, verbose=False,
+                )
+                self._tq_val_cache[new_bits].to(self.device)
+
+        self._tq_keys = self._tq_cache[new_bits]
+        if self.compress_values and hasattr(self, '_tq_val_cache'):
+            self._tq_vals = self._tq_val_cache.get(new_bits, self._tq_vals)
+        self.bits = new_bits
 
     def get_seq_length(self) -> int:
         return self.cumulative_length
@@ -188,6 +253,8 @@ def make_turboquant_cache(
     bits: int = 4,
     compress_values: bool = False,
     verbose: bool = True,
+    adaptive_policy=None,
+    max_cache_len: int = None,
 ) -> "DynamicCache":
     """
     Build a DynamicCache pre-populated with TurboQuantLayer instances.
@@ -198,15 +265,8 @@ def make_turboquant_cache(
     bits : int. Default 4.
     compress_values : bool. Default False.
     verbose : bool. Default True.
-
-    Returns
-    -------
-    DynamicCache ready to pass to model.generate(past_key_values=...)
-
-    Example
-    -------
-    >>> cache = make_turboquant_cache(model.config, bits=4)
-    >>> outputs = model.generate(input_ids, past_key_values=cache, max_new_tokens=512)
+    adaptive_policy : AdaptivePolicy, optional.
+    max_cache_len : int, optional. Sliding window eviction length.
     """
     if not _HF_AVAILABLE:
         raise ImportError("pip install transformers")
@@ -214,12 +274,15 @@ def make_turboquant_cache(
     head_dim   = _get_head_dim(config)
     num_layers = _get_num_layers(config)
 
+    mode_str = "adaptive" if adaptive_policy else f"{bits}-bit"
     if verbose:
-        print(f"[TurboQuant] {bits}-bit cache | {num_layers} layers | head_dim={head_dim}")
-        print(f"             triton: {'✓' if is_triton_available() else '✗ (pip install triton for GPU speed)'}")
+        print(f"[TurboQuant] {mode_str} cache | {num_layers} layers | head_dim={head_dim}")
+        if max_cache_len:
+            print(f"             sliding window: {max_cache_len} tokens")
+        print(f"             triton: {'yes' if is_triton_available() else 'no'}")
 
     cache = DynamicCache()
-    cache.layers = []   # reset layers list
+    cache.layers = []
     for i in range(num_layers):
         cache.layers.append(TurboQuantLayer(
             head_dim=head_dim,
@@ -227,6 +290,8 @@ def make_turboquant_cache(
             layer_idx=i,
             compress_values=compress_values,
             verbose=(verbose and i == 0),
+            adaptive_policy=adaptive_policy,
+            max_cache_len=max_cache_len,
         ))
 
     return cache
@@ -238,33 +303,27 @@ def patch_model_cache(
     compress_values: bool = False,
     verbose: bool = True,
     mode: str = None,
+    adaptive_policy=None,
+    max_cache_len: int = None,
 ):
     """
-    One-liner: patch model.generate() to use TurboQuant cache automatically.
+    Patch model.generate() to use TurboQuant cache automatically.
 
     Parameters
     ----------
     model : PreTrainedModel
     bits : int
-        Bits per dimension (2, 3, or 4). Ignored if `mode` is set.
     mode : str, optional
-        QuantCore mode string ('fast', 'balanced', 'max_memory_save').
-        Overrides `bits` when provided.
+    adaptive_policy : AdaptivePolicy, optional
+    max_cache_len : int, optional
     compress_values : bool
     verbose : bool
-
-    Example
-    -------
-    >>> patch_model_cache(model, bits=4)
-    >>> # or via QuantCore SDK:
-    >>> patch_model_cache(model, mode='balanced')
-    >>> outputs = model.generate(input_ids, max_new_tokens=512)
     """
     if not _HF_AVAILABLE:
         raise ImportError("pip install transformers")
 
-    # Resolve mode → bits
-    if mode is not None:
+    # Resolve mode -> bits
+    if mode is not None and mode != "adaptive":
         _mode_bits = {"fast": 4, "balanced": 3, "max_memory_save": 2}
         if mode not in _mode_bits:
             raise ValueError(f"mode must be one of {list(_mode_bits)}")
@@ -277,14 +336,18 @@ def patch_model_cache(
             kwargs["past_key_values"] = make_turboquant_cache(
                 model.config, bits=bits,
                 compress_values=compress_values, verbose=verbose,
+                adaptive_policy=adaptive_policy,
+                max_cache_len=max_cache_len,
             )
         return original_generate(*args, **kwargs)
 
     model.generate = patched_generate
     model._turboquant_bits = bits
     model._turboquant_mode = mode or f"{bits}-bit"
+    model._turboquant_adaptive = adaptive_policy is not None
     if verbose:
-        print(f"✓ TurboQuant {bits}-bit patched onto {type(model).__name__}")
+        mode_label = "adaptive" if adaptive_policy else f"{bits}-bit"
+        print(f"[TurboQuant] {mode_label} patched onto {type(model).__name__}")
 
 
 def unpatch_model_cache(model):
