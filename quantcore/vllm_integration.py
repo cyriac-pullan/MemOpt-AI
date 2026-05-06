@@ -307,4 +307,4 @@ def get_vllm_engine_args(
             args["gpu_memory_utilization"] = min(budget_mb / total_mb, 0.95)
 
     return args
-"""
+
