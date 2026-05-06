@@ -52,7 +52,7 @@ from .exceptions import (
     QuantCoreDependencyError,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__  = "QuantCore Contributors"
 __paper__   = "https://arxiv.org/abs/2504.19874"
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantcore-ai"
-version = "0.2.0"
+version = "0.3.0"
 description = "Adaptive Memory Runtime for LLMs — compress KV cache 2-6x with dynamic bit switching, memory budgets, and sliding window eviction"
 readme = "README.md"
 license = { text = "Apache-2.0" }
