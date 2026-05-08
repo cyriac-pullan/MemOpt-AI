@@ -212,9 +212,17 @@ def benchmark_numpy(
 
     # ── Memory vs sequence length ─────────────────────────────────────────
     seq_results = []
+    import math
     for sl in seq_lens:
-        fp16 = sl * num_layers * num_heads * dim * 2 * 2 / 1024 / 1024
-        compressed_mem = sl * num_layers * num_heads * (dim + 4) * 2 / 1024 / 1024
+        # FP16: 2 bytes per element. Total = seq_len * layers * heads * dim * 2 * (K and V)
+        fp16 = sl * num_layers * num_heads * dim * 2 * 2 / (1024 * 1024)
+
+        # TurboQuant: packed bytes per vector + 4 byte float32 norm.
+        # Two vectors (K and V) per head per layer.
+        packed_bytes_per_vec = math.ceil(dim * bits / 8) if bits <= 4 else dim
+        tq_vec_bytes = packed_bytes_per_vec + 4
+        compressed_mem = sl * num_layers * num_heads * tq_vec_bytes * 2 / (1024 * 1024)
+
         seq_results.append(SeqLenResult(
             seq_len=sl,
             fp16_mb=round(fp16, 2),

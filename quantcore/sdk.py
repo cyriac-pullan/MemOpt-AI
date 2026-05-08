@@ -26,23 +26,23 @@ if TYPE_CHECKING:
 # ── Mode → Bits mapping ───────────────────────────────────────────────────────
 
 _MODE_BITS: dict[str, int] = {
-    "fast":            4,   # cosine sim 0.995,  ~1.9x vs fp16
-    "balanced":        3,   # cosine sim 0.983,  ~2.8x vs fp16
-    "max_memory_save": 2,   # cosine sim 0.940,  ~4.0x vs fp16
+    "fast":            4,   # cosine sim 0.995,  ~3.7x vs fp16
+    "balanced":        3,   # cosine sim 0.983,  ~4.9x vs fp16
+    "max_memory_save": 2,   # cosine sim 0.940,  ~7.1x vs fp16
     "adaptive":        None, # dynamic — changes at runtime
 }
 
 _MODE_DESCRIPTION: dict[str, dict] = {
     "fast": {
-        "bits": 4, "cosine_sim": 0.995, "compression_vs_fp16": 1.94,
+        "bits": 4, "cosine_sim": 0.995, "compression_vs_fp16": 3.76,
         "description": "Best quality. Recommended for production chatbots.",
     },
     "balanced": {
-        "bits": 3, "cosine_sim": 0.983, "compression_vs_fp16": 2.76,
+        "bits": 3, "cosine_sim": 0.983, "compression_vs_fp16": 4.92,
         "description": "Great tradeoff. Recommended for most use cases.",
     },
     "max_memory_save": {
-        "bits": 2, "cosine_sim": 0.940, "compression_vs_fp16": 3.88,
+        "bits": 2, "cosine_sim": 0.940, "compression_vs_fp16": 7.11,
         "description": "Maximum compression. Good for RAG and edge deployment.",
     },
     "adaptive": {
@@ -222,9 +222,9 @@ def optimize_model(
         Any HuggingFace model or raw PyTorch model.
     mode : str
         Compression mode:
-          "fast"            -> 4-bit (cosine sim 0.995, ~1.9x vs fp16)
-          "balanced"        -> 3-bit (cosine sim 0.983, ~2.8x vs fp16) [default]
-          "max_memory_save" -> 2-bit (cosine sim 0.940, ~4.0x vs fp16)
+          "fast"            -> 4-bit (cosine sim 0.995, ~3.7x vs fp16)
+          "balanced"        -> 3-bit (cosine sim 0.983, ~4.9x vs fp16) [default]
+          "max_memory_save" -> 2-bit (cosine sim 0.940, ~7.1x vs fp16)
           "adaptive"        -> dynamic compression (escalates as context grows)
     max_memory : str, int, float, optional
         Memory budget. Activates adaptive policy when combined with mode="adaptive".

@@ -27,24 +27,28 @@ class ModelInfo:
 
     def expected_compression(self, bits: int) -> float:
         """Approx compression ratio vs fp16 for KV keys at given bits."""
+        import math
         bytes_fp16 = self.head_dim * 2
-        bytes_compressed = self.head_dim + 4  # uint8 indices + float32 norm
+        packed_bytes = math.ceil(self.head_dim * bits / 8) if bits <= 4 else self.head_dim
+        bytes_compressed = packed_bytes + 4
         return bytes_fp16 / bytes_compressed
 
     def kv_cache_mb(self, seq_len: int, bits: int) -> dict:
         """
         Estimate KV cache memory (MB) for keys at a given sequence length.
         """
+        import math
         # FP16 baseline: seq * layers * kv_heads * head_dim * 2 bytes * 2 (K+V)
         fp16 = (
             seq_len * self.num_hidden_layers * self.num_kv_heads
-            * self.head_dim * 2 * 2 / 1024 / 1024
+            * self.head_dim * 2 * 2 / (1024 * 1024)
         )
-        # Compressed: uint8 indices (1 byte/elem) + float32 norm (4 bytes) per vector
-        bytes_per_vec = self.head_dim + 4
+        # Compressed: packed bytes + float32 norm (4 bytes) per vector
+        packed_bytes = math.ceil(self.head_dim * bits / 8) if bits <= 4 else self.head_dim
+        bytes_per_vec = packed_bytes + 4
         compressed = (
             seq_len * self.num_hidden_layers * self.num_kv_heads
-            * bytes_per_vec * 2 / 1024 / 1024
+            * bytes_per_vec * 2 / (1024 * 1024)
         )
         return {
             "fp16_mb": round(fp16, 2),
