@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantcore-ai"
-version = "0.4.0"
+version = "0.4.1"
 description = "Adaptive Memory Runtime for LLMs — compress KV cache 3-7x with vectorized GPU ops, fused compressed attention, and rigorous benchmark suite"
 readme = "README.md"
 license = { text = "Apache-2.0" }
