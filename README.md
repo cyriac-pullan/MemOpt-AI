@@ -245,6 +245,59 @@ The algorithm applies a random orthogonal rotation to KV vectors, which induces 
 
 ---
 
+## Benchmark Methodology
+
+> **Read this before interpreting any benchmark numbers.**
+
+TurboQuant has two separate benchmark suites that measure different things.
+
+### Suite 1 — KV Compression Microbenchmarks (`benchmarks/benchmark_suite.py`)
+
+These benchmarks evaluate KV compression fidelity and compressed attention
+microkernels using **synthetic KV tensors** — no model weights are loaded.
+
+**What they measure:** VRAM reduction, compression ratio, cosine similarity,
+inner-product correlation (`q·k` vs `q·k̂`), RMSE, attention throughput,
+and quality drift across context lengths (4K / 8K / 32K).
+
+**What they do NOT measure:** end-to-end LLM output quality, perplexity,
+full transformer decoding throughput, or production serving performance.
+
+The `tokens/sec` figure is **compressed KV inner-product throughput**,
+not LLM generation speed. These differ by roughly 100×.
+
+### Suite 2 — End-to-End Evaluation (`benchmarks/eval_e2e.py`)
+
+Real transformer forward passes with TurboQuant's cache patched in, measuring:
+perplexity delta (Δ PPL), needle-in-haystack retrieval, attention KL
+divergence, and greedy generation token agreement.
+
+The default configuration uses a randomly-initialised GPT-2 architecture model
+(no download required). The compression code path is **identical** to what runs
+on pretrained models. To evaluate on pretrained weights, replace
+`build_model("gpt2-small-sim")` with `AutoModelForCausalLM.from_pretrained(...)`.
+
+**Pass thresholds:**
+
+| Bit depth | Max Δ PPL |
+|---|---|
+| 4-bit | ≤ 1.05 |
+| 3-bit | ≤ 1.15 |
+| 2-bit | ≤ 1.40 |
+
+**What is proven:**
+- ✅ Compression correctness and VRAM reduction (3–7×)
+- ✅ Attention-space inner-product preservation (IP corr ≥ 0.99 at 4-bit)
+- ✅ Context-length-independent quality
+- ✅ Perplexity within threshold on architecture-equivalent model
+
+**What is not yet proven:**
+- ❌ Perplexity on pretrained models (WikiText-2, PG-19, LongBench)
+- ❌ Real GPU throughput (requires CUDA hardware)
+- ❌ Production serving metrics (vLLM batch throughput)
+
+---
+
 ## Limitations (Honest)
 
 - **Short context (< 1K tokens)**: KV cache is small, savings are negligible. Model weights dominate memory.

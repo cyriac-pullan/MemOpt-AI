@@ -1,0 +1,724 @@
+{
+  "perplexity": [
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "n_docs": 3,
+      "doc_len": 256,
+      "ppl_fp16": 52642.93850081908,
+      "ppl_compressed": 52615.057279396344,
+      "delta_ppl": 0.9994703711035754,
+      "delta_ppl_pct": -0.05296288964246054,
+      "nll_fp16": 10.871287387025125,
+      "nll_compressed": 10.870757617825776,
+      "delta_nll": -0.0005297691993497722,
+      "wall_time_fp16_s": 0.5213715590000447,
+      "wall_time_tq_s": 0.584258410000075,
+      "pass_bar": true
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "n_docs": 3,
+      "doc_len": 256,
+      "ppl_fp16": 52642.93850081908,
+      "ppl_compressed": 52615.58621329493,
+      "delta_ppl": 0.9994804186790651,
+      "delta_ppl_pct": -0.051958132093488096,
+      "nll_fp16": 10.871287387025125,
+      "nll_compressed": 10.870767670675042,
+      "delta_nll": -0.0005197163500838542,
+      "wall_time_fp16_s": 0.5213715590000447,
+      "wall_time_tq_s": 1.5978102849999232,
+      "pass_bar": true
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "n_docs": 3,
+      "doc_len": 256,
+      "ppl_fp16": 52642.93850081908,
+      "ppl_compressed": 52614.67947272429,
+      "delta_ppl": 0.9994631943257812,
+      "delta_ppl_pct": -0.053680567421876546,
+      "nll_fp16": 10.871287387025125,
+      "nll_compressed": 10.870750437219158,
+      "delta_nll": -0.0005369498059675237,
+      "wall_time_fp16_s": 0.5213715590000447,
+      "wall_time_tq_s": 0.5219847930000014,
+      "pass_bar": true
+    }
+  ],
+  "needle": [
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "context_len": 512,
+      "needle_position_pct": 25,
+      "needle_token": 999,
+      "needle_position_abs": 128,
+      "logit_rank_fp16": 3970,
+      "logit_rank_tq": 3941,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -0.7543125450611115,
+      "logit_gap_tq": -0.7779490947723389
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "context_len": 512,
+      "needle_position_pct": 25,
+      "needle_token": 999,
+      "needle_position_abs": 128,
+      "logit_rank_fp16": 3970,
+      "logit_rank_tq": 3979,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -0.7543125450611115,
+      "logit_gap_tq": -0.7775471210479736
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "context_len": 512,
+      "needle_position_pct": 25,
+      "needle_token": 999,
+      "needle_position_abs": 128,
+      "logit_rank_fp16": 3970,
+      "logit_rank_tq": 3972,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -0.7543125450611115,
+      "logit_gap_tq": -0.7800385355949402
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "context_len": 512,
+      "needle_position_pct": 25,
+      "needle_token": 999,
+      "needle_position_abs": 128,
+      "logit_rank_fp16": 14182,
+      "logit_rank_tq": 13763,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -1.2502683401107788,
+      "logit_gap_tq": -1.2566996067762375
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "context_len": 512,
+      "needle_position_pct": 25,
+      "needle_token": 999,
+      "needle_position_abs": 128,
+      "logit_rank_fp16": 14182,
+      "logit_rank_tq": 13778,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -1.2502683401107788,
+      "logit_gap_tq": -1.2582647651433945
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "context_len": 512,
+      "needle_position_pct": 25,
+      "needle_token": 999,
+      "needle_position_abs": 128,
+      "logit_rank_fp16": 14182,
+      "logit_rank_tq": 13694,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -1.2502683401107788,
+      "logit_gap_tq": -1.2584710717201233
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "context_len": 512,
+      "needle_position_pct": 75,
+      "needle_token": 999,
+      "needle_position_abs": 384,
+      "logit_rank_fp16": 15168,
+      "logit_rank_tq": 14126,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -1.1323238164186478,
+      "logit_gap_tq": -1.106066733598709
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "context_len": 512,
+      "needle_position_pct": 75,
+      "needle_token": 999,
+      "needle_position_abs": 384,
+      "logit_rank_fp16": 15168,
+      "logit_rank_tq": 13958,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -1.1323238164186478,
+      "logit_gap_tq": -1.1001399457454681
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "context_len": 512,
+      "needle_position_pct": 75,
+      "needle_token": 999,
+      "needle_position_abs": 384,
+      "logit_rank_fp16": 15168,
+      "logit_rank_tq": 14014,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -1.1323238164186478,
+      "logit_gap_tq": -1.1018864661455154
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "context_len": 512,
+      "needle_position_pct": 75,
+      "needle_token": 999,
+      "needle_position_abs": 384,
+      "logit_rank_fp16": 9566,
+      "logit_rank_tq": 9353,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -0.9570389688014984,
+      "logit_gap_tq": -0.9571323096752167
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "context_len": 512,
+      "needle_position_pct": 75,
+      "needle_token": 999,
+      "needle_position_abs": 384,
+      "logit_rank_fp16": 9566,
+      "logit_rank_tq": 9464,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -0.9570389688014984,
+      "logit_gap_tq": -0.9593881070613861
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "context_len": 512,
+      "needle_position_pct": 75,
+      "needle_token": 999,
+      "needle_position_abs": 384,
+      "logit_rank_fp16": 9566,
+      "logit_rank_tq": 9483,
+      "correct_fp16": false,
+      "correct_tq": false,
+      "agreement": false,
+      "logit_gap_fp16": -0.9570389688014984,
+      "logit_gap_tq": -0.9609726667404175
+    }
+  ],
+  "attn_fidelity": [
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 0,
+      "head_idx": 0,
+      "kl_divergence": 0.007794389501214027,
+      "l1_distance": 0.0988754853606224,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 0,
+      "head_idx": 1,
+      "kl_divergence": 0.012395868077874184,
+      "l1_distance": 0.12459535896778107,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 0,
+      "head_idx": 2,
+      "kl_divergence": 0.01313699595630169,
+      "l1_distance": 0.13188806176185608,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 0,
+      "head_idx": 3,
+      "kl_divergence": 0.011666107922792435,
+      "l1_distance": 0.12431389838457108,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 1,
+      "head_idx": 0,
+      "kl_divergence": 0.004949729889631271,
+      "l1_distance": 0.08355121314525604,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 1,
+      "head_idx": 1,
+      "kl_divergence": 0.009031236171722412,
+      "l1_distance": 0.10558471083641052,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 1,
+      "head_idx": 2,
+      "kl_divergence": 0.007897719740867615,
+      "l1_distance": 0.10380519926548004,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 1,
+      "head_idx": 3,
+      "kl_divergence": 0.005469143390655518,
+      "l1_distance": 0.0838286280632019,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 2,
+      "head_idx": 0,
+      "kl_divergence": 0.007284384220838547,
+      "l1_distance": 0.09746392071247101,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 2,
+      "head_idx": 1,
+      "kl_divergence": 0.005794942378997803,
+      "l1_distance": 0.09025965631008148,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 2,
+      "head_idx": 2,
+      "kl_divergence": 0.006691142916679382,
+      "l1_distance": 0.09662503004074097,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 2,
+      "head_idx": 3,
+      "kl_divergence": 0.006772395223379135,
+      "l1_distance": 0.08884969353675842,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 3,
+      "head_idx": 0,
+      "kl_divergence": 0.004948358982801437,
+      "l1_distance": 0.07859137654304504,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 3,
+      "head_idx": 1,
+      "kl_divergence": 0.009620698168873787,
+      "l1_distance": 0.11032512784004211,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 3,
+      "head_idx": 2,
+      "kl_divergence": 0.007280342280864716,
+      "l1_distance": 0.09546744078397751,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "layer_idx": 3,
+      "head_idx": 3,
+      "kl_divergence": 0.004529794678092003,
+      "l1_distance": 0.07500354945659637,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 0,
+      "head_idx": 0,
+      "kl_divergence": 0.008098561316728592,
+      "l1_distance": 0.1029643714427948,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 0,
+      "head_idx": 1,
+      "kl_divergence": 0.013497903943061829,
+      "l1_distance": 0.12914304435253143,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 0,
+      "head_idx": 2,
+      "kl_divergence": 0.014132322743535042,
+      "l1_distance": 0.13660241663455963,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 0,
+      "head_idx": 3,
+      "kl_divergence": 0.012152016162872314,
+      "l1_distance": 0.1261436641216278,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 1,
+      "head_idx": 0,
+      "kl_divergence": 0.005127627402544022,
+      "l1_distance": 0.08444248884916306,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 1,
+      "head_idx": 1,
+      "kl_divergence": 0.009069710969924927,
+      "l1_distance": 0.10691868513822556,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 1,
+      "head_idx": 2,
+      "kl_divergence": 0.008769478648900986,
+      "l1_distance": 0.10920490324497223,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 1,
+      "head_idx": 3,
+      "kl_divergence": 0.005974248051643372,
+      "l1_distance": 0.08707962930202484,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 2,
+      "head_idx": 0,
+      "kl_divergence": 0.006794968619942665,
+      "l1_distance": 0.09320960193872452,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 2,
+      "head_idx": 1,
+      "kl_divergence": 0.005972655490040779,
+      "l1_distance": 0.08940650522708893,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 2,
+      "head_idx": 2,
+      "kl_divergence": 0.0070693641901016235,
+      "l1_distance": 0.09874609857797623,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 2,
+      "head_idx": 3,
+      "kl_divergence": 0.007283741608262062,
+      "l1_distance": 0.09404401481151581,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 3,
+      "head_idx": 0,
+      "kl_divergence": 0.004815835505723953,
+      "l1_distance": 0.07780256867408752,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 3,
+      "head_idx": 1,
+      "kl_divergence": 0.009585672989487648,
+      "l1_distance": 0.1107301265001297,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 3,
+      "head_idx": 2,
+      "kl_divergence": 0.007268190383911133,
+      "l1_distance": 0.09628438204526901,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "layer_idx": 3,
+      "head_idx": 3,
+      "kl_divergence": 0.004487844184041023,
+      "l1_distance": 0.07536450028419495,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 0,
+      "head_idx": 0,
+      "kl_divergence": 0.007965082302689552,
+      "l1_distance": 0.1031288132071495,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 0,
+      "head_idx": 1,
+      "kl_divergence": 0.013808781281113625,
+      "l1_distance": 0.13082346320152283,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 0,
+      "head_idx": 2,
+      "kl_divergence": 0.014203356578946114,
+      "l1_distance": 0.1373572051525116,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 0,
+      "head_idx": 3,
+      "kl_divergence": 0.012033388018608093,
+      "l1_distance": 0.12587480247020721,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 1,
+      "head_idx": 0,
+      "kl_divergence": 0.005115458741784096,
+      "l1_distance": 0.08398716151714325,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 1,
+      "head_idx": 1,
+      "kl_divergence": 0.009439194574952126,
+      "l1_distance": 0.10974261909723282,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 1,
+      "head_idx": 2,
+      "kl_divergence": 0.009066127240657806,
+      "l1_distance": 0.11075261980295181,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 1,
+      "head_idx": 3,
+      "kl_divergence": 0.006009556353092194,
+      "l1_distance": 0.08786077052354813,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 2,
+      "head_idx": 0,
+      "kl_divergence": 0.007159912958741188,
+      "l1_distance": 0.09627535939216614,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 2,
+      "head_idx": 1,
+      "kl_divergence": 0.006262701004743576,
+      "l1_distance": 0.09123492985963821,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 2,
+      "head_idx": 2,
+      "kl_divergence": 0.007163310423493385,
+      "l1_distance": 0.09814335405826569,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 2,
+      "head_idx": 3,
+      "kl_divergence": 0.007472800090909004,
+      "l1_distance": 0.09535440057516098,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 3,
+      "head_idx": 0,
+      "kl_divergence": 0.004912063479423523,
+      "l1_distance": 0.07929372042417526,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 3,
+      "head_idx": 1,
+      "kl_divergence": 0.009268704801797867,
+      "l1_distance": 0.10893557220697403,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 3,
+      "head_idx": 2,
+      "kl_divergence": 0.007621593773365021,
+      "l1_distance": 0.09879466891288757,
+      "top1_agreement": false
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "layer_idx": 3,
+      "head_idx": 3,
+      "kl_divergence": 0.004534430801868439,
+      "l1_distance": 0.07463178038597107,
+      "top1_agreement": false
+    }
+  ],
+  "generation": [
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "prompt_len": 64,
+      "gen_len": 50,
+      "token_agreement_pct": 100.0,
+      "prefix_match_len": 50,
+      "first_divergence_pos": -1
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "prompt_len": 64,
+      "gen_len": 50,
+      "token_agreement_pct": 100.0,
+      "prefix_match_len": 50,
+      "first_divergence_pos": -1
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "prompt_len": 64,
+      "gen_len": 50,
+      "token_agreement_pct": 100.0,
+      "prefix_match_len": 50,
+      "first_divergence_pos": -1
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 2,
+      "prompt_len": 64,
+      "gen_len": 50,
+      "token_agreement_pct": 18.0,
+      "prefix_match_len": 9,
+      "first_divergence_pos": 9
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 3,
+      "prompt_len": 64,
+      "gen_len": 50,
+      "token_agreement_pct": 18.0,
+      "prefix_match_len": 9,
+      "first_divergence_pos": 9
+    },
+    {
+      "model_name": "gpt2-small-sim",
+      "bits": 4,
+      "prompt_len": 64,
+      "gen_len": 50,
+      "token_agreement_pct": 18.0,
+      "prefix_match_len": 9,
+      "first_divergence_pos": 9
+    }
+  ]
+}
